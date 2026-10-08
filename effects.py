@@ -15,7 +15,7 @@ def apply_chain(data, samplerate, chain):
         data = effect(data, samplerate)
     return data
 
-def rolloff(data, samplerate, cutoff=8000):
+def rolloff(data, samplerate, cutoff=12000):
     sos = butter(4, cutoff, btype='low', output='sos', fs=samplerate,)
     out = sosfilt(sos, data, axis=0)
     return out
