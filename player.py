@@ -4,7 +4,7 @@ import effects
 
 def play(path):
     data, samplerate = soundfile.read(path)
-    data = effects.apply_chain(data, effects.CHAIN)
+    data = effects.apply_chain(data, samplerate, effects.CHAIN)
     sounddevice.play(data, samplerate)
     print("__________________________\n\nPress Enter to stop playback\n__________________________\n\n")
     while True:
