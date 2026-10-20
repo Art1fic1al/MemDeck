@@ -5,14 +5,21 @@ import effects
 def play(path):
     data, samplerate = soundfile.read(path)
     data = effects.apply_chain(data, samplerate, effects.CHAIN)
-    sounddevice.play(data, samplerate)
-    print("__________________________\n\nPress Enter to stop playback\n__________________________\n\n")
-    while True:
-        breaker = input()
-        if breaker == "":
-            sounddevice.stop()
-            break
-        else:
-            print("\nInvalid input. Please press Enter to stop playback.\n\n")
-            False
-    sounddevice.wait()
+    position = 0
+
+    def callback(outdata, frames, time, status):
+        nonlocal position
+        chunk = data[position:position + frames]
+        if len(chunk) == 0:
+            raise sounddevice.CallbackStop
+        outdata[:len(chunk)] = chunk
+        outdata[len(chunk):] = 0
+        position += len(chunk)
+
+    with sounddevice.OutputStream(
+        samplerate=samplerate,
+        channels=data.shape[1],
+        callback=callback,
+    ):
+        print("Press Enter to stop playback")
+        input()

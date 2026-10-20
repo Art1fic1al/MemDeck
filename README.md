@@ -19,6 +19,7 @@ The library and playback spine is complete, and three of the four tape effects a
 - Loads that catalogue back and plays a selected track
 - **Processes the audio through a tape effects chain on the way to the speakers**
 - Playback can be interrupted at any point
+- Plays through a streaming audio callback, which is what makes pause and seek possible later
 
 Tested against a real library of roughly 400 files.
 
@@ -36,7 +37,7 @@ Audio is decoded to a numpy array and passed through an ordered list of effect f
 ## Planned
 
 - Wow and flutter: the slow pitch drift and fast wobble of an imperfect tape motor
-- A `Player` object with pause, stop and seek, using a streaming audio callback instead of whole-file playback
+- A `Player` object with pause, stop and seek
 - User-named cassettes: custom collections with editable titles
 - Metadata editing, writing corrected artist and title tags back to the files
 - A graphical cassette-deck interface
