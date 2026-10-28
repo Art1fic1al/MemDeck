@@ -37,7 +37,7 @@ Audio is decoded to a numpy array and passed through an ordered list of effect f
 ## Planned
 
 - Wow and flutter: the slow pitch drift and fast wobble of an imperfect tape motor
-- A `Player` object with pause, stop and seek
+- A `Player` object with stop and seek
 - User-named cassettes: custom collections with editable titles
 - Metadata editing, writing corrected artist and title tags back to the files
 - A graphical cassette-deck interface
@@ -76,8 +76,8 @@ Imports run in one direction only: `main` knows about the other modules, and non
 
 - `soundfile` cannot decode AAC, so `.m4a` and `.mp4` files are catalogued correctly but will fail at playback.
 - The scanner reads one folder and does not descend into subfolders.
-- Track selection does not yet validate its input, so a non-numeric entry will raise an error.
 - Effect settings are defaults in the code and cannot be changed without editing `effects.py`.
+- Current tests with Steelseries' Arctis-Nova-5 headphones lead to drivers restarting when imports load.
 
 ## Why
 

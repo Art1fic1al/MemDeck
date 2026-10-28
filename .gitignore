@@ -1,6 +1,7 @@
 __pycache__/
 *.pyc
 casette.json
+glossary.md
 mp3/
 songs/
 .vscode/
