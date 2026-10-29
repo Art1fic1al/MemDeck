@@ -10,3 +10,6 @@ songs/
 *.wav
 *.m4a
 *.mp4
+
+!fx/*.mp3
+!fx/*.wav
