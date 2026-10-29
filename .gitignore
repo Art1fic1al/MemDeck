@@ -5,6 +5,7 @@ glossary.md
 mp3/
 songs/
 .vscode/
+.venv/
 
 *.mp3
 *.wav
