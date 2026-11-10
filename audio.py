@@ -1,3 +1,4 @@
+import numpy
 import sounddevice
 
 # Notes on this machine, learned the hard way:
@@ -72,3 +73,20 @@ def report():
         print(f"  {index:>3}  {info['max_output_channels']} out  "
               f"{api_name(info['hostapi']):<20} {name}")
     print()
+
+
+def resample(data, old_rate, new_rate):
+    """Stretch or squash audio so it plays at the right speed on a new rate.
+
+    WASAPI will only open a stream at the rate the device is already set to,
+    so anything that does not match has to be converted before playback.
+    """
+    if old_rate == new_rate:
+        return data
+    new_length = int(len(data) * new_rate / old_rate)
+    old_points = numpy.arange(len(data))
+    new_points = numpy.linspace(0, len(data) - 1, new_length)
+    out = numpy.zeros((new_length, data.shape[1]))
+    for channel in range(data.shape[1]):
+        out[:, channel] = numpy.interp(new_points, old_points, data[:, channel])
+    return out
