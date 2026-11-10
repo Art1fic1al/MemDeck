@@ -12,11 +12,10 @@ import audio
 while True:
     folder = Path(input("\nEnter desired filepath to search\n\n"))
     answer = str(input(f"\nSearch directory {folder} for files?\n___________________________\n[Y] Yes | [N] No | [R] Redo\n\n")).lower()
-    if ynr(answer):
+    if not ynr(answer):
+        continue
+    if scan_folder(folder):
         break
-
-
-scan_folder(folder)
 
 
 with open("casette.json", "r", encoding="utf-8") as f:
@@ -53,4 +52,4 @@ while True:
     sfx.play("close")
 
     player = Player(picked["path"])
-    player.play()
+    player.console()

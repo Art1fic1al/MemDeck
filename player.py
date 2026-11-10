@@ -1,3 +1,4 @@
+import numpy
 import soundfile
 import sounddevice
 import effects
@@ -6,21 +7,35 @@ import audio
 
 class Player:
     def __init__(self, path):
-        self.data, self.samplerate = soundfile.read(path)
-        self.data = effects.apply_chain(self.data, self.samplerate, effects.CHAIN)
+        data, file_rate = soundfile.read(path)
+        if data.ndim == 1:
+            # a mono file arrives flat. Give it a second column so the rest
+            # of the code can keep treating it as rows of channels.
+            data = numpy.column_stack([data, data])
+
+        if audio.RATE is not None and file_rate != audio.RATE:
+            print(f"Tape runs at {file_rate} Hz, deck runs at {audio.RATE} Hz. Converting.")
+            data = audio.resample(data, file_rate, audio.RATE)
+            file_rate = audio.RATE
+
+        self.samplerate = file_rate
+        self.data = effects.apply_chain(data, self.samplerate, effects.CHAIN)
         self.position = 0
         self.speed = 1
         self.target_speed = 1
         self.ramp = 0
         self.paused = False
+        self.stream = None
+
+    # ----- the tape mechanism -----
 
     def set_speed(self, value):
-        # Ask the motor to change speed. Winding releases the stop."""
+        # Ask the motor to change speed. Winding releases the stop.
         self.target_speed = value
         self.paused = False
 
     def step_speed(self, frames):
-        # Move one notch toward the target speed, slowly, like a real motor."""
+        # Move one notch toward the target speed, slowly, like a real motor.
         if self.speed == self.target_speed:
             self.ramp = 0
             return
@@ -49,7 +64,11 @@ class Player:
 
         chunk = self.data[self.position:stop:self.speed]
         if len(chunk) == 0:
-            raise sounddevice.CallbackStop
+            # Reached one end of the tape. The motor stops, but the tape stays
+            # in the deck, so rewind and play still work without re-inserting.
+            outdata.fill(0)
+            self.position = min(max(self.position, 0), len(self.data))
+            return
         outdata[:len(chunk)] = chunk
         outdata[len(chunk):] = 0
 
@@ -58,31 +77,71 @@ class Player:
             self.position = 0
             self.set_speed(1)
 
-    def play(self):
-        controls = "Press Enter to EJECT tape, P to PLAY, S to STOP, D to FAST FORWARD, A to REVERSE."
-        with sounddevice.OutputStream(
+    # ----- the stream, opened and closed on demand -----
+
+    def open(self):
+        # Start the sound card calling our callback.
+        if self.stream is not None:
+            return
+        self.stream = sounddevice.OutputStream(
             samplerate=self.samplerate,
             channels=self.data.shape[1],
             callback=self.callback,
             device=audio.DEVICE,
-        ):
-            print(controls)
-            while True:
-                key = input("\n\n").lower()
-                if key == "s":
-                    sfx.play("button_stop")
-                    self.paused = True
-                elif key == "p":
-                    sfx.play("button_play")
-                    self.set_speed(1)
-                elif key == "d":
-                    sfx.play("button_wind")
-                    self.set_speed(4)
-                elif key == "a":
-                    sfx.play("button_wind")
-                    self.set_speed(-4)
-                elif key == "":
-                    sfx.play("eject")
-                    break
-                else:
-                    print("\n\nInvalid input. " + controls)
+        )
+        self.stream.start()
+
+    def close(self):
+        # Stop it, and let go of the device.
+        if self.stream is None:
+            return
+        self.stream.stop()
+        self.stream.close()
+        self.stream = None
+
+    def is_running(self):
+        return self.stream is not None
+
+    # ----- the buttons on the front of the deck -----
+    # Anything can press these: a keyboard loop, a GUI button, a test.
+
+    def press_play(self):
+        sfx.play("button_play")
+        self.set_speed(1)
+
+    def press_stop(self):
+        sfx.play("button_stop")
+        self.paused = True
+
+    def press_forward(self):
+        sfx.play("button_wind")
+        self.set_speed(4)
+
+    def press_rewind(self):
+        sfx.play("button_wind")
+        self.set_speed(-4)
+
+    def press_eject(self):
+        sfx.play("eject")
+        self.close()
+
+    # ----- one way of driving the deck: the keyboard -----
+
+    def console(self):
+        controls = "Press Enter to EJECT tape, P to PLAY, S to STOP, D to FAST FORWARD, A to REVERSE."
+        self.open()
+        print(controls)
+        while self.is_running():
+            key = input("\n\n").lower()
+            if key == "s":
+                self.press_stop()
+            elif key == "p":
+                self.press_play()
+            elif key == "d":
+                self.press_forward()
+            elif key == "a":
+                self.press_rewind()
+            elif key == "":
+                self.press_eject()
+            else:
+                print("\n\nInvalid input. " + controls)
