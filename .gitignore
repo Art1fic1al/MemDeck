@@ -2,6 +2,8 @@ __pycache__/
 *.pyc
 casette.json
 glossary.md
+WALKTHROUGH.md
+WALKTHROUGH_2.md
 mp3/
 songs/
 .vscode/
